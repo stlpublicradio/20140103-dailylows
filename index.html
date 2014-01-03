@@ -145,7 +145,7 @@ svg.selectAll(".month")
     .attr("class", "month")
     .attr("d", monthPath);
 
-d3.csv("/data/1983_2013weatherdatadaily.csv", function(error, csv) {
+d3.csv("data/1983_2013weatherdatadaily.csv", function(error, csv) {
   var data = d3.nest()
     .key(function(d) { return d.DATE; })
     .rollup(function(d) { return d3.round(d[0].TMIN * .18 + 32,0); })
