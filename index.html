@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<link href='http://fonts.googleapis.com/css?family=Titillium+Web:400,700' rel='stylesheet' type='text/css'>
+<style>
+
+body {
+  font-family: 'Titillium Web', sans-serif;
+  font-size: 18px;
+  shape-rendering: crispEdges;
+  width:550px;
+}
+
+p {
+	margin:0px;
+	padding:0px;
+}
+
+.day {
+  fill: #fff;
+}
+
+.month {
+  fill: none;
+  stroke: #000;
+  stroke-width: 1px;
+}
+
+#key div {
+	float: left;
+	padding: 5px;
+	margin: 5px;
+	font-weight:700;
+}
+
+#key {	background: rgb(255,255,255);
+	background: rgba(255,255,255, .8);
+	padding:5px;
+	position:fixed;
+	top:0;
+	width:100%;
+	z-index:100;}
+
+#temp9 {background-color:rgb(158,1,66);}
+#temp8 {background-color:rgb(213,62,79)}
+#temp7 {background-color:rgb(244,109,67)}
+#temp6 {background-color:rgb(253,174,97)}
+#temp5 {background-color:rgb(254,224,139)}
+#temp4 {background-color:rgb(230,245,152)}
+#temp3 {background-color:rgb(171,221,164)}
+#temp2 {background-color:rgb(102,194,165)}
+#temp1 {background-color:rgb(50,136,189)}
+#temp0 {background-color:rgb(94,79,162)}
+
+.RdYlGn .q9-10{fill:rgb(158,1,66)}
+.RdYlGn .q8-10{fill:rgb(213,62,79)}
+.RdYlGn .q7-10{fill:rgb(244,109,67)}
+.RdYlGn .q6-10{fill:rgb(253,174,97)}
+.RdYlGn .q5-10{fill:rgb(254,224,139)}
+.RdYlGn .q4-10{fill:rgb(230,245,152)}
+.RdYlGn .q3-10{fill:rgb(171,221,164)}
+.RdYlGn .q2-10{fill:rgb(102,194,165)}
+.RdYlGn .q1-10{fill:rgb(50,136,189)}
+.RdYlGn .q0-10{fill:rgb(94,79,162)}
+
+</style>
+<body>
+	<div id="key" class="RdYlGn">
+		<div id="temp0">
+			<p>Less than 0&deg;F</p>
+		</div>
+		<div id="temp1">
+			<p>0&deg;to 10&deg;</p>
+		</div>
+		<div id="temp2">
+			<p>10&deg;to 20&deg;</p>
+		</div>
+		<div id="temp3">
+			<p>20&deg;to 30&deg;</p>
+		</div>
+		<div id="temp4">
+			<p>30&deg;to 40&deg;</p>
+		</div>
+		<div id="temp5">
+			<p>40&deg;to 50&deg;</p>
+		</div>
+		<div id="temp6">
+			<p>50&deg;to 60&deg;</p>
+		</div>
+		<div id="temp7">
+			<p>60&deg;to 70&deg;</p>
+		</div>
+		<div id="temp8">
+			<p>70&deg;to 80&deg;</p>
+		</div>
+		<div id="temp9">
+			<p>Above 80&deg;</p>
+		</div>
+	</div>
+	</div>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script>
+
+var width = 550,
+    height = 100,
+    cellSize = 9.5; // cell size
+
+var day = d3.time.format("%w"),
+    week = d3.time.format("%U"),
+    format = d3.time.format("%Y%m%d");
+
+var color = d3.scale.quantize()
+    .domain([-10, 90])
+    .range(d3.range(10).map(function(d) { return "q" + d + "-10"; }));
+
+var svg = d3.select("body").selectAll("svg")
+    .data(d3.range(1984, 2014))
+  .enter().append("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .attr("class", "RdYlGn")
+  .append("g")
+    .attr("transform", "translate(" + ((width - cellSize * 53) / 2) + "," + (height - cellSize * 7 - 1) + ")");
+
+svg.append("text")
+    .attr("transform", "translate(-6," + cellSize * 3.5 + ")rotate(-90)")
+    .style("text-anchor", "middle")
+    .text(function(d) { return d; });
+
+var rect = svg.selectAll(".day")
+    .data(function(d) { return d3.time.days(new Date(d, 0, 1), new Date(d + 1, 0, 1)); })
+  .enter().append("rect")
+    .attr("class", "day")
+    .attr("width", cellSize)
+    .attr("height", cellSize)
+    .attr("x", function(d) { return week(d) * cellSize; })
+    .attr("y", function(d) { return day(d) * cellSize; })
+    .datum(format);
+
+rect.append("title")
+    .text(function(d) { return d; });
+
+svg.selectAll(".month")
+    .data(function(d) { return d3.time.months(new Date(d, 0, 1), new Date(d + 1, 0, 1)); })
+  .enter().append("path")
+    .attr("class", "month")
+    .attr("d", monthPath);
+
+d3.csv("/data/1983_2013weatherdatadaily.csv", function(error, csv) {
+  var data = d3.nest()
+    .key(function(d) { return d.DATE; })
+    .rollup(function(d) { return d3.round(d[0].TMIN * .18 + 32,0); })
+    .map(csv);
+
+  rect.filter(function(d) { return d in data; })
+      .attr("class", function(d) { return "day " + color(data[d]); })
+    .select("title")
+      .text(function(d) { return d.substring(0,4) + "-" + d.substring(4,6) + "-" + d.substring(6,8) + ": " + data[d] + "\260 F"; });
+});
+
+function monthPath(t0) {
+  var t1 = new Date(t0.getFullYear(), t0.getMonth() + 1, 0),
+      d0 = +day(t0), w0 = +week(t0),
+      d1 = +day(t1), w1 = +week(t1);
+  return "M" + (w0 + 1) * cellSize + "," + d0 * cellSize
+      + "H" + w0 * cellSize + "V" + 7 * cellSize
+      + "H" + w1 * cellSize + "V" + (d1 + 1) * cellSize
+      + "H" + (w1 + 1) * cellSize + "V" + 0
+      + "H" + (w0 + 1) * cellSize + "Z";
+}
+
+</script>
